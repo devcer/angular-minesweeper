@@ -43,9 +43,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
   onClickCell(ev, rowNumber, columnNumber) {
     if (
-      this.table[rowNumber][columnNumber] === '' ||
-      this.table[rowNumber][columnNumber] === 'mine' ||
-      this.showMines
+      (this.table[rowNumber][columnNumber] === '' ||
+        this.table[rowNumber][columnNumber] === 'mine') &&
+      !this.showMines
     ) {
       if (!this.gameStarted && this.hasMine(rowNumber, columnNumber)) {
         // clicked on mine for the first time
