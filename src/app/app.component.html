@@ -4,6 +4,8 @@
       <td
         *ngFor="let j of columns; let col = index"
         (click)="onClickCell($event, row, col)"
+        [class.active-mine]="table[row][col] === 'mine' && showMines"
+        [class.active-cell]="table[row][col] !== 'mine' && table[row][col] !== ''"
       >
         <p class="mine" *ngIf="table[row][col] === 'mine'">
           {{ showMines ? "*" : "" }}

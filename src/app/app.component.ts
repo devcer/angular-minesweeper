@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AlertService } from './services/alert/alert.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   gameStarted = false;
   firstMineLocationn = [];
   showMines = false;
+  movesLeft = this.noOfColumns * this.noOfRows - this.noOfMines;
+  constructor(private alert: AlertService) {}
   ngOnInit(): void {
     this.createTableCells();
   }
@@ -25,58 +28,63 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
   createTableCells() {
     this.table = Array(this.noOfRows)
-    .fill('')
-    .map((x, i) =>
-      Array(this.noOfColumns)
-        .fill('')
-        .map((x, i) => '')
-    );
+      .fill('')
+      .map((x, i) =>
+        Array(this.noOfColumns)
+          .fill('')
+          .map((x, i) => '')
+      );
   }
   insertMines() {
     for (let i = 0; i < this.noOfMines; i++) {
-      let row = Math.floor(Math.random() * 10);
-      let column = Math.floor(Math.random() * 10);
-      this.table[row][column] = 'mine';
+      this.addMineToRandomLocation();
     }
     console.table(this.table);
   }
   onClickCell(ev, rowNumber, columnNumber) {
-    if (!this.gameStarted) {
-      if (this.hasMine(rowNumber, columnNumber)) {
-        this.table[rowNumber][columnNumber] = '';
-        this.addMineToFirstEmptyLocation();
+    if (
+      this.table[rowNumber][columnNumber] === '' ||
+      this.table[rowNumber][columnNumber] === 'mine'
+    ) {
+      if (!this.gameStarted && this.hasMine(rowNumber, columnNumber)) {
+        // clicked on mine for the first time
+        this.addMineToRandomLocation();
+        this.table[rowNumber][columnNumber] = this.getMinesCount(
+          rowNumber,
+          columnNumber
+        );
+        this.movesLeft -= 1;
         console.table(this.table);
-      } else {
-        this.table[rowNumber][columnNumber] = this.getMinesCount(
-          rowNumber,
-          columnNumber
-        );
-      }
-      this.gameStarted = true;
-    } else {
-      if (this.hasMine(rowNumber, columnNumber)) {
+      } else if (this.hasMine(rowNumber, columnNumber)) {
+        // clicked on mine
         this.gameOver();
-        this.showMines = true;
       } else {
+        // display mines around count
         this.table[rowNumber][columnNumber] = this.getMinesCount(
           rowNumber,
           columnNumber
         );
-      }
-    }
-  }
-  addMineToFirstEmptyLocation() {
-    for (let i = 0; i < this.noOfRows; i++) {
-      for (let j = 0; j < this.noOfColumns; j++) {
-        if (!this.hasMine(i, j)) {
-          this.table[i][j] = 'mine';
-          return;
+        this.movesLeft -= 1;
+        if (this.movesLeft === 0) {
+          this.alert.showAlert('Congratulations', 'You Won!', 'success');
+          this.showMines = true;
         }
       }
+    }
+    this.gameStarted = true;
+  }
+  addMineToRandomLocation() {
+    let row = Math.floor(Math.random() * this.noOfRows);
+    let column = Math.floor(Math.random() * this.noOfColumns);
+    if (this.table[row][column] !== 'mine') {
+      this.table[row][column] = 'mine';
+    } else {
+      this.addMineToRandomLocation();
     }
   }
   gameOver() {
     this.showMines = true;
+    this.alert.showAlert('Game Over', 'You Lost!', 'error');
   }
   hasMine(rowNumber: number, columnNumber: number): boolean {
     return this.table[rowNumber][columnNumber] === 'mine';
@@ -143,5 +151,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.createTableCells();
     this.insertMines();
     this.showMines = false;
+    this.gameStarted = false;
+    this.movesLeft = this.noOfColumns * this.noOfRows - this.noOfMines;
   }
 }
